@@ -1,0 +1,43 @@
+import json
+import requests
+import matplotlib.pyplot as plt
+import folium
+from folium import Marker, Popup
+
+# Define the JSON URL
+json_url = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_month.geojson"
+
+# Fetch earthquake data from the URL
+response = requests.get(json_url)
+
+# Check if the request was successful
+if response.status_code == 200:
+    earthquake_data = response.json()
+else:
+    print(f"Failed to fetch data from URL. Status code: {response.status_code}")
+    exit()
+
+# Extract earthquake coordinates and magnitudes
+coordinates = [(feature["geometry"]["coordinates"][1], feature["geometry"]["coordinates"][0]) for feature in earthquake_data["features"]]
+magnitudes = [feature["properties"]["mag"] for feature in earthquake_data["features"]]
+
+# Create a scatter plot to visualize earthquake magnitudes
+plt.figure(figsize=(10, 6))
+plt.scatter(coordinates, magnitudes, c=magnitudes, cmap='viridis', s=50, alpha=0.7)
+plt.colorbar(label='Magnitude')
+plt.xlabel('Longitude')
+plt.ylabel('Latitude')
+plt.title('Earthquake Magnitudes')
+plt.show()
+
+# Create a folium map with markers to visualize earthquake locations
+m = folium.Map(location=coordinates[0], zoom_start=4)
+
+# Add markers for each earthquake
+for i, coordinate in enumerate(coordinates):
+    popup_text = f"Magnitude: {magnitudes[i]}"
+    marker = Marker(location=coordinate, popup=Popup(popup_text))
+    marker.add_to(m)
+
+# Display the map
+m.save('earthquake_map.html')
